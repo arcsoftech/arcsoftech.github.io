@@ -1,0 +1,42 @@
+name: Generate Resume PDF
+on:
+  push:
+    paths: ['ArihantChhajedResume.tex']
+  workflow_dispatch: # Manual trigger
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday at midnight
+
+jobs:
+  generate-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Install LaTeX
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y texlive-latex-base texlive-latex-extra texlive-fonts-recommended
+      
+      - name: Generate PDF
+        run: |
+          pdflatex ArihantChhajedResume.tex
+          pdflatex ArihantChhajedResume.tex  # Run twice for proper references
+      
+      - name: Rename and move PDF
+        run: |
+          mv ArihantChhajedResume.pdf resume.pdf
+      
+      - name: Commit and push PDF
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add resume.pdf
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Auto-generate resume PDF [skip ci]"
+            git push
+          fi
